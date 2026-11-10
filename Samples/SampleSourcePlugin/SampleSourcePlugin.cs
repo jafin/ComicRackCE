@@ -5,6 +5,8 @@ using cYo.Projects.ComicRack.Engine;
 using cYo.Projects.ComicRack.Plugins;
 using SampleLibrary;
 
+[assembly: PluginApiVersion(1)]
+
 namespace SampleSourcePlugin
 {
 	// A source plugin. Copy this folder into the Scripts folder of ComicRack; there is nothing to build.

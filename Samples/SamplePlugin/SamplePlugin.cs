@@ -5,6 +5,8 @@ using System.Windows.Forms;
 using cYo.Projects.ComicRack.Engine;
 using cYo.Projects.ComicRack.Plugins;
 
+[assembly: PluginApiVersion(1)]
+
 namespace SamplePlugin
 {
 	// A compiled plugin. Build the project and copy SamplePlugin.dll into a folder below the Scripts folder of ComicRack.

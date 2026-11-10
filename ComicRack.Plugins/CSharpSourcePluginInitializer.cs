@@ -158,6 +158,12 @@ namespace cYo.Projects.ComicRack.Plugins
 				{
 					return Enumerable.Empty<Command>();
 				}
+				string apiProblem = PluginApiCheck.FindProblem(PluginApiCheck.LoadReflectionOnly(assemblyFile));
+				if (apiProblem != null)
+				{
+					Command.LogDefault("Skipped source plugin '{0}': {1}", file, apiProblem);
+					return Enumerable.Empty<Command>();
+				}
 				PluginAssemblyResolver.Register(plugin.Folder, plugin.References.Select(Path.GetDirectoryName));
 				Assembly assembly = Assembly.LoadFrom(assemblyFile);
 				PluginAssemblyResolver.Register(assembly, plugin.Folder);

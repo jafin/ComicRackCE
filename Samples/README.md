@@ -45,6 +45,19 @@ To see the messages of plugins and compile errors, start ComicRack with the scri
 - Some hooks have the same `Execute` signature, for example `ILibrary`, `IEditor`, `IBooks` and `INewBooks`. To give each hook its own code, implement the interfaces explicitly: `void IBooks.Execute(ComicBook[] books) { ... }`.
 - The `Key` must be unique. ComicRack skips a plugin whose `Key` another plugin or script already uses.
 
+## Plugin API version
+
+The plugin API is the set of attributes and interfaces in `ComicRack.Plugins.dll`. Its assembly version changes with every build, so it cannot tell a plugin whether it fits. Declare the API version your plugin was written for, once, in any of its files:
+
+```c#
+[assembly: PluginApiVersion(1)]
+```
+
+- `PluginApi.Version` is the newest API version of the running ComicRack. `PluginApi.MinimumVersion` is the oldest one it still supports. Both are 1 today.
+- ComicRack skips a plugin that declares a version above `PluginApi.Version` or below `PluginApi.MinimumVersion`. It writes a message with both versions to the script console. It reads the declaration without running code of the plugin, so a skipped plugin is never loaded.
+- A plugin without the attribute counts as version 1 and loads. Add the attribute to say which API you wrote the plugin against.
+- The same rule applies to source plugins. A plugin that uses a newer API usually fails to compile, and a message about a compile error then replaces the version message.
+
 ## Source plugins
 
 The `.csplugin` file marks the folder as a source plugin. Its name is the name of the plugin. It is an INI file, and all entries are optional:
