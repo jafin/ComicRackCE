@@ -13,6 +13,13 @@ namespace cYo.Projects.ComicRack.Plugins
 
 		private static readonly string pluginApiName = typeof(PluginAttribute).Assembly.GetName().Name;
 
+		private readonly PluginLoadFailures failures;
+
+		public DotNetPluginInitializer(PluginLoadFailures failures)
+		{
+			this.failures = failures;
+		}
+
 		public override IEnumerable<Command> GetCommands(string file)
 		{
 			if (!".dll".Equals(Path.GetExtension(file), StringComparison.OrdinalIgnoreCase) || !ReferencesPluginApi(file, out string apiProblem))
@@ -21,8 +28,7 @@ namespace cYo.Projects.ComicRack.Plugins
 			}
 			if (apiProblem != null)
 			{
-				Command.LogDefault("Skipped .NET plugin '{0}': {1}", file, apiProblem);
-				return Enumerable.Empty<Command>();
+				return Skip(file, apiProblem);
 			}
 			try
 			{
@@ -30,21 +36,25 @@ namespace cYo.Projects.ComicRack.Plugins
 				Assembly assembly = Assembly.LoadFrom(file);
 				if (!string.Equals(Path.GetFullPath(assembly.Location), Path.GetFullPath(file), StringComparison.OrdinalIgnoreCase))
 				{
-					Command.LogDefault("Skipped .NET plugin '{0}': an assembly with the same identity is already loaded from '{1}'", file, assembly.Location);
-					return Enumerable.Empty<Command>();
+					return Skip(file, $"an assembly with the same identity is already loaded from '{assembly.Location}'");
 				}
-				return DotNetPluginLoader.CreateCommands(assembly, file);
+				return DotNetPluginLoader.CreateCommands(assembly, file, failures);
 			}
 			catch (FileLoadException e) when (e.HResult == BlockedByZoneHResult)
 			{
-				Command.LogDefault("Windows blocked the .NET plugin '{0}' because it came from the internet. Open the Properties of the file and select Unblock, then restart ComicRack.", file);
-				return Enumerable.Empty<Command>();
+				return Skip(file, "Windows blocked it because it came from the internet. Open the Properties of the file and select Unblock, then restart ComicRack.");
 			}
 			catch (Exception e)
 			{
-				Command.LogDefault("Failed to load .NET plugin '{0}': {1}", file, e.Message);
-				return Enumerable.Empty<Command>();
+				return Skip(file, e.Message);
 			}
+		}
+
+		private IEnumerable<Command> Skip(string file, string reason)
+		{
+			Command.LogDefault("Skipped .NET plugin '{0}': {1}", file, reason);
+			failures.Add(PluginKind.CompiledDotNet, file, null, reason);
+			return Enumerable.Empty<Command>();
 		}
 
 		// A script folder also holds the libraries of plugins. Only a DLL that references the plugin API can contain a plugin, and only such a DLL gets loaded for execution.

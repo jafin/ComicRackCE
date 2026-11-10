@@ -69,6 +69,8 @@ namespace cYo.Projects.ComicRack.Plugins
 
 		public DotNetPluginClass Plugin { get; }
 
+		public override PluginKind Kind => DotNetPluginLoader.KindOf(Plugin.File);
+
 		private string ConfigFileName => Plugin.File + "-" + Key + ".config";
 
 		public static bool ImplementsHook(Type type)

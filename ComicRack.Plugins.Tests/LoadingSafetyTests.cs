@@ -127,7 +127,7 @@ public class LoadingSafetyTests
 	}
 
 	// .NET Framework rejects a path with a stream name, so the Zone.Identifier stream is written through CreateFileW.
-	private static void MarkAsDownloaded(string file)
+	internal static void MarkAsDownloaded(string file)
 	{
 		using (SafeFileHandle handle = CreateFileW(file + ":Zone.Identifier", GenericWrite, 0, IntPtr.Zero, CreateAlways, 0, IntPtr.Zero))
 		{

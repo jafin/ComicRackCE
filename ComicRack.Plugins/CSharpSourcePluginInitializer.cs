@@ -128,11 +128,14 @@ namespace cYo.Projects.ComicRack.Plugins
 
 		private readonly string cachePath;
 
+		private readonly PluginLoadFailures failures;
+
 		private readonly HashSet<string> usedCacheEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-		public CSharpSourcePluginInitializer(string cachePath)
+		public CSharpSourcePluginInitializer(string cachePath, PluginLoadFailures failures)
 		{
 			this.cachePath = cachePath;
+			this.failures = failures;
 		}
 
 		public static bool IsMarker(string file) => MarkerExtension.Equals(Path.GetExtension(file), StringComparison.OrdinalIgnoreCase);
@@ -162,16 +165,18 @@ namespace cYo.Projects.ComicRack.Plugins
 				if (apiProblem != null)
 				{
 					Command.LogDefault("Skipped source plugin '{0}': {1}", file, apiProblem);
+					failures.Add(PluginKind.CSharpSource, file, plugin.Name, apiProblem);
 					return Enumerable.Empty<Command>();
 				}
 				PluginAssemblyResolver.Register(plugin.Folder, plugin.References.Select(Path.GetDirectoryName));
 				Assembly assembly = Assembly.LoadFrom(assemblyFile);
 				PluginAssemblyResolver.Register(assembly, plugin.Folder);
-				return DotNetPluginLoader.CreateCommands(assembly, file);
+				return DotNetPluginLoader.CreateCommands(assembly, file, failures);
 			}
 			catch (Exception e)
 			{
 				Command.LogDefault("Failed to load source plugin '{0}': {1}", file, e.Message);
+				failures.Add(PluginKind.CSharpSource, file, Path.GetFileNameWithoutExtension(file), e.Message);
 				return Enumerable.Empty<Command>();
 			}
 		}
@@ -213,6 +218,8 @@ namespace cYo.Projects.ComicRack.Plugins
 					{
 						Command.LogDefault(error);
 					}
+					string more = result.Errors.Count > 1 ? $" (and {result.Errors.Count - 1} more)" : "";
+					failures.Add(PluginKind.CSharpSource, plugin.MarkerFile, plugin.Name, result.Errors[0] + more);
 					return null;
 				}
 				if (result.Warnings.Count > 0)

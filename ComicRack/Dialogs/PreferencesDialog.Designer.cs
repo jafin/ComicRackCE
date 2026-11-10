@@ -205,6 +205,7 @@ namespace cYo.Projects.ComicRack.Viewer.Dialogs
             this.btConfigScript = new System.Windows.Forms.Button();
             this.lvScripts = new System.Windows.Forms.ListView();
             this.chScriptName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.chScriptType = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.chScriptPackage = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.grpPackages = new cYo.Common.Windows.Forms.CollapsibleGroupBox();
             this.btRemovePackage = new System.Windows.Forms.Button();
@@ -2446,6 +2447,7 @@ namespace cYo.Projects.ComicRack.Viewer.Dialogs
             this.lvScripts.CheckBoxes = true;
             this.lvScripts.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.chScriptName,
+            this.chScriptType,
             this.chScriptPackage});
             this.lvScripts.FullRowSelect = true;
             this.lvScripts.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
@@ -2460,18 +2462,24 @@ namespace cYo.Projects.ComicRack.Viewer.Dialogs
             this.lvScripts.TabIndex = 6;
             this.lvScripts.UseCompatibleStateImageBehavior = false;
             this.lvScripts.View = System.Windows.Forms.View.Details;
+            this.lvScripts.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.lvScripts_ItemCheck);
             this.lvScripts.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lvScripts_ItemChecked);
             this.lvScripts.SelectedIndexChanged += new System.EventHandler(this.lvScripts_SelectedIndexChanged);
             // 
             // chScriptName
             // 
             this.chScriptName.Text = "Name";
-            this.chScriptName.Width = 250;
+            this.chScriptName.Width = 200;
+            // 
+            // chScriptType
+            // 
+            this.chScriptType.Text = "Type";
+            this.chScriptType.Width = 100;
             // 
             // chScriptPackage
             // 
             this.chScriptPackage.Text = "Package";
-            this.chScriptPackage.Width = 190;
+            this.chScriptPackage.Width = 140;
             // 
             // grpPackages
             // 
@@ -2884,6 +2892,7 @@ namespace cYo.Projects.ComicRack.Viewer.Dialogs
 		private CollapsibleGroupBox grpScripts;
 		private ListView lvScripts;
 		private ColumnHeader chScriptName;
+		private ColumnHeader chScriptType;
 		private ColumnHeader chScriptPackage;
 		private CheckBox chkDisableScripting;
 		private CollapsibleGroupBox grpScriptSettings;

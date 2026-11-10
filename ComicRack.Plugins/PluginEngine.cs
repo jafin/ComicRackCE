@@ -16,6 +16,8 @@ namespace cYo.Projects.ComicRack.Plugins
 
 		private readonly CSharpSourcePluginInitializer sourceInitializer;
 
+		private readonly PluginLoadFailures loadFailures = new PluginLoadFailures();
+
 		public const string ScriptTypeCreateBookList = "CreateBookList";
 
 		public const string ScriptTypeParseComicPath = "ParseComicPath";
@@ -151,12 +153,12 @@ namespace cYo.Projects.ComicRack.Plugins
 		/// <param name="sourcePluginCachePath">The folder that keeps the compiled assemblies of source plugins (.csplugin). The default is a folder in the temporary files of the user.</param>
 		public PluginEngine(string sourcePluginCachePath = null)
 		{
-			sourceInitializer = new CSharpSourcePluginInitializer(sourcePluginCachePath ?? Path.Combine(Path.GetTempPath(), "ComicRack", "PluginCache"));
+			sourceInitializer = new CSharpSourcePluginInitializer(sourcePluginCachePath ?? Path.Combine(Path.GetTempPath(), "ComicRack", "PluginCache"), loadFailures);
 			initializers =
 			[
 				new XmlPluginInitializer(),
 				new PythonPluginInitializer(),
-				new DotNetPluginInitializer(),
+				new DotNetPluginInitializer(loadFailures),
 				sourceInitializer
 			];
 		}
@@ -178,6 +180,9 @@ namespace cYo.Projects.ComicRack.Plugins
 				});
 			}
 		}
+
+		/// <summary>The plugins that Initialize found but could not load, such as a source plugin that does not compile. A plugin that loaded is not listed.</summary>
+		public IReadOnlyList<PluginLoadFailure> LoadFailures => loadFailures.Snapshot();
 
 		public void SetEnabled(string key, bool enabled)
 		{
@@ -210,9 +215,11 @@ namespace cYo.Projects.ComicRack.Plugins
 					try
 					{
 						// The Key of a .NET command is known before Initialize, so a plugin that is skipped is reported and never initialized.
-						if (cmd is DotNetCommand && IsKeyTakenByAnotherPlugin(cmd))
+						if (cmd is DotNetCommand dotNetCommand && IsKeyTakenByAnotherPlugin(cmd))
 						{
-							Command.LogDefault("Skipped .NET plugin command '{0}.{1}': the Key is already used by another plugin", cmd.Key, cmd.Hook);
+							const string reason = "the Key is already used by another plugin";
+							Command.LogDefault("Skipped .NET plugin command '{0}.{1}': {2}", cmd.Key, cmd.Hook, reason);
+							loadFailures.Add(cmd.Kind, dotNetCommand.Plugin.File, cmd.Key, reason);
 							continue;
 						}
 						if (!cmd.IsHook(hooks) || !cmd.Initialize(env, Path.GetDirectoryName(file)))

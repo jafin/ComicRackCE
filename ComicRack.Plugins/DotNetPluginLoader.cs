@@ -9,10 +9,10 @@ namespace cYo.Projects.ComicRack.Plugins
 	internal static class DotNetPluginLoader
 	{
 		// pluginFile is the file that stands for the plugin on disk: the DLL of a compiled plugin, the .csplugin file of a source plugin.
-		public static IEnumerable<Command> CreateCommands(Assembly assembly, string pluginFile)
+		public static IEnumerable<Command> CreateCommands(Assembly assembly, string pluginFile, PluginLoadFailures failures)
 		{
 			var commands = new List<Command>();
-			foreach (Type type in GetLoadableTypes(assembly, pluginFile).Where(type => type.IsClass))
+			foreach (Type type in GetLoadableTypes(assembly, pluginFile, failures).Where(type => type.IsClass))
 			{
 				try
 				{
@@ -20,6 +20,7 @@ namespace cYo.Projects.ComicRack.Plugins
 					if (problem != null)
 					{
 						Command.LogDefault("Skipped .NET plugin class '{0}' in '{1}': {2}", type.FullName, pluginFile, problem);
+						failures.Add(KindOf(pluginFile), pluginFile, NameOf(type), problem);
 					}
 					if (plugin != null)
 					{
@@ -29,9 +30,25 @@ namespace cYo.Projects.ComicRack.Plugins
 				catch (Exception e)
 				{
 					Command.LogDefault("Skipped .NET plugin class '{0}' in '{1}': {2}", type.FullName, pluginFile, e.Message);
+					failures.Add(KindOf(pluginFile), pluginFile, NameOf(type), e.Message);
 				}
 			}
 			return commands;
+		}
+
+		public static PluginKind KindOf(string pluginFile) => CSharpSourcePluginInitializer.IsMarker(pluginFile) ? PluginKind.CSharpSource : PluginKind.CompiledDotNet;
+
+		private static string NameOf(Type type)
+		{
+			try
+			{
+				string key = type.GetCustomAttribute<PluginAttribute>(inherit: false)?.Key;
+				return string.IsNullOrEmpty(key) ? type.FullName : key;
+			}
+			catch (Exception)
+			{
+				return type.FullName;
+			}
 		}
 
 		// Reads the attribute only. The class is not created here, so a scan runs no plugin code.
@@ -72,7 +89,7 @@ namespace cYo.Projects.ComicRack.Plugins
 			return plugin;
 		}
 
-		private static IEnumerable<Type> GetLoadableTypes(Assembly assembly, string pluginFile)
+		private static IEnumerable<Type> GetLoadableTypes(Assembly assembly, string pluginFile, PluginLoadFailures failures)
 		{
 			try
 			{
@@ -83,6 +100,7 @@ namespace cYo.Projects.ComicRack.Plugins
 				foreach (string message in e.LoaderExceptions.Select(le => le.Message).Distinct())
 				{
 					Command.LogDefault("Some types in .NET plugin '{0}' could not be loaded: {1}", pluginFile, message);
+					failures.Add(KindOf(pluginFile), pluginFile, null, message);
 				}
 				return e.Types.Where(type => type != null);
 			}

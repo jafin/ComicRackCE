@@ -38,6 +38,8 @@ namespace cYo.Projects.ComicRack.Viewer.Dialogs
 	{
 		private const int MaximumMemoryStepSize = 32;
 
+		private const string FailedScriptImageKey = "PluginLoadFailed";
+
 		private static readonly string DuplicatePackageText = TR.Messages["ScriptPackageExists", "A Script Package with the same name already exists! Do you want to overwrite this Package?"];
 
 		private PluginEngine pluginEngine;
@@ -303,6 +305,15 @@ namespace cYo.Projects.ComicRack.Viewer.Dialogs
 		private void lbPaths_DragOver(object sender, DragEventArgs e)
 		{
 			e.Effect = (e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None);
+		}
+
+		private void lvScripts_ItemCheck(object sender, ItemCheckEventArgs e)
+		{
+			// A plugin that failed to load has nothing to enable.
+			if (lvScripts.Items[e.Index].Tag is PluginLoadFailure)
+			{
+				e.NewValue = e.CurrentValue;
+			}
 		}
 
 		private void lvScripts_ItemChecked(object sender, ItemCheckedEventArgs e)
@@ -849,6 +860,7 @@ namespace cYo.Projects.ComicRack.Viewer.Dialogs
 						string hookDescription = PluginEngine.GetHookDescription(allCommand.Hook);
 						ListViewGroup group = lvScripts.Groups[hookDescription] ?? lvScripts.Groups.Add(hookDescription, hookDescription);
 						ListViewItem listViewItem = lvScripts.Items.Add(allCommand.Key, allCommand.GetLocalizedName(), allCommand.Key);
+						listViewItem.SubItems.Add(GetKindText(allCommand.Kind));
 						listViewItem.SubItems.Add(value);
 						listViewItem.Tag = allCommand;
 						listViewItem.Checked = allCommand.Enabled;
@@ -861,11 +873,49 @@ namespace cYo.Projects.ComicRack.Viewer.Dialogs
 						}
 					}
 				}
+				AddFailedScripts();
 				lvScripts.SortGroups();
 			}
 			finally
 			{
 				lvScripts.EndUpdate();
+			}
+		}
+
+		private void AddFailedScripts()
+		{
+			string groupText = LocalizeUtility.GetText(this, "ScriptsFailedGroup", "Failed to load");
+			string failedText = LocalizeUtility.GetText(this, "ScriptFailed", "Failed ({0})");
+			foreach (PluginLoadFailure failure in pluginEngine.LoadFailures)
+			{
+				if (!imageList.Images.ContainsKey(FailedScriptImageKey))
+				{
+					using (Icon icon = new Icon(SystemIcons.Warning, imageList.ImageSize))
+					{
+						imageList.Images.Add(FailedScriptImageKey, icon.ToBitmap());
+					}
+				}
+				ListViewGroup group = lvScripts.Groups[groupText] ?? lvScripts.Groups.Add(groupText, groupText);
+				string name = failure.Name ?? Path.GetFileName(failure.File);
+				ListViewItem item = lvScripts.Items.Add("failed:" + failure.File + "|" + name, name, FailedScriptImageKey);
+				item.SubItems.Add(StringUtility.Format(failedText, GetKindText(failure.Kind)));
+				item.Tag = failure;
+				item.ForeColor = SystemColors.GrayText;
+				item.ToolTipText = failure.File + Environment.NewLine + failure.Reason;
+				item.Group = group;
+			}
+		}
+
+		private string GetKindText(PluginKind kind)
+		{
+			switch (kind)
+			{
+			case PluginKind.CSharpSource:
+				return LocalizeUtility.GetText(this, "ScriptTypeCSharpSource", "C# source");
+			case PluginKind.CompiledDotNet:
+				return LocalizeUtility.GetText(this, "ScriptTypeCompiledDotNet", "Compiled .NET");
+			default:
+				return LocalizeUtility.GetText(this, "ScriptTypePython", "Python");
 			}
 		}
 
