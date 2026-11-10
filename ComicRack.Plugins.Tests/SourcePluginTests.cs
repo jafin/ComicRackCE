@@ -165,6 +165,50 @@ public class SourcePluginTests
 	}
 
 	[Test]
+	public async Task Cache_entries_of_removed_plugins_are_deleted_and_everything_else_stays()
+	{
+		using var scripts = new ScriptsFolder();
+		scripts.Write(@"Scripts\Gone\Gone.csplugin", "");
+		scripts.Write(@"Scripts\Gone\Plugin.cs", Returning("Gone", "\"x\""));
+		scripts.Write(@"Scripts\Kept\Kept.csplugin", "");
+		scripts.Write(@"Scripts\Kept\Plugin.cs", Returning("Kept", "\"x\""));
+		IsolatedScan.Run(scripts);
+		string[] bothEntries = Directory.GetFiles(scripts.Cache);
+		string unrelated = scripts.Write(@"Cache\notes.txt", "mine");
+		string almost = scripts.Write(@"Cache\Other-12345678.dll", "not an entry");
+		Directory.Delete(scripts.PathTo(@"Scripts\Gone"), recursive: true);
+
+		IsolatedScan.Result second = IsolatedScan.Run(scripts);
+
+		string[] remaining = Directory.GetFiles(scripts.Cache).Where(file => file != unrelated && file != almost).ToArray();
+		await Assert.That(bothEntries.Length).IsEqualTo(4);
+		await Assert.That(remaining.Select(Path.GetFileName)).IsEquivalentTo(bothEntries.Where(file => Path.GetFileName(file).StartsWith("Kept-")).Select(Path.GetFileName));
+		await Assert.That(File.Exists(unrelated)).IsTrue();
+		await Assert.That(File.Exists(almost)).IsTrue();
+		await Assert.That(second.Keys).IsEquivalentTo(new[] { "Kept" });
+	}
+
+	[Test]
+	public async Task Cache_entries_of_plugins_in_both_scripts_folders_are_kept()
+	{
+		using var scripts = new ScriptsFolder();
+		scripts.Write(@"Scripts\One\Mine.csplugin", "");
+		scripts.Write(@"Scripts\One\Plugin.cs", Returning("First", "\"one\""));
+		scripts.Write(@"Second\Two\Mine.csplugin", "");
+		scripts.Write(@"Second\Two\Plugin.cs", Returning("Second", "\"two\""));
+		string second = scripts.PathTo(@"Second");
+		IsolatedScan.Run(scripts, moreFolders: new[] { second });
+		string[] entries = Directory.GetFiles(scripts.Cache);
+
+		IsolatedScan.Result restart = IsolatedScan.Run(scripts, moreFolders: new[] { second });
+
+		await Assert.That(entries.Length).IsEqualTo(4);
+		await Assert.That(Directory.GetFiles(scripts.Cache)).IsEquivalentTo(entries);
+		await Assert.That(restart.Keys).IsEquivalentTo(new[] { "First", "Second" });
+		await Assert.That(restart.Console.Split('\n').Count(line => line.Contains("is unchanged"))).IsEqualTo(2);
+	}
+
+	[Test]
 	public async Task Reference_of_the_csplugin_file_is_compiled_against_and_resolves_when_the_plugin_runs()
 	{
 		using var scripts = new ScriptsFolder();

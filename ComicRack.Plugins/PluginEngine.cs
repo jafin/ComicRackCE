@@ -14,6 +14,8 @@ namespace cYo.Projects.ComicRack.Plugins
 	{
 		private readonly PluginInitializer[] initializers;
 
+		private readonly CSharpSourcePluginInitializer sourceInitializer;
+
 		public const string ScriptTypeCreateBookList = "CreateBookList";
 
 		public const string ScriptTypeParseComicPath = "ParseComicPath";
@@ -149,12 +151,13 @@ namespace cYo.Projects.ComicRack.Plugins
 		/// <param name="sourcePluginCachePath">The folder that keeps the compiled assemblies of source plugins (.csplugin). The default is a folder in the temporary files of the user.</param>
 		public PluginEngine(string sourcePluginCachePath = null)
 		{
+			sourceInitializer = new CSharpSourcePluginInitializer(sourcePluginCachePath ?? Path.Combine(Path.GetTempPath(), "ComicRack", "PluginCache"));
 			initializers =
 			[
 				new XmlPluginInitializer(),
 				new PythonPluginInitializer(),
 				new DotNetPluginInitializer(),
-				new CSharpSourcePluginInitializer(sourcePluginCachePath ?? Path.Combine(Path.GetTempPath(), "ComicRack", "PluginCache"))
+				sourceInitializer
 			];
 		}
 
@@ -256,6 +259,12 @@ namespace cYo.Projects.ComicRack.Plugins
 					}
 				}
 			}
+		}
+
+		/// <summary>Call once after Initialize has scanned every scripts folder. Deletes the compiled assemblies of source plugins that no folder uses any more.</summary>
+		public void CompleteInitialization()
+		{
+			sourceInitializer.SweepCache();
 		}
 
 		// A Key belongs to the first plugin that registers it. Only the hook commands of one .NET plugin class share their Key.

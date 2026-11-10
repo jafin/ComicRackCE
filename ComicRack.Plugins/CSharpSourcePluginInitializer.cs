@@ -124,7 +124,11 @@ namespace cYo.Projects.ComicRack.Plugins
 			typeof(PluginAttribute).Assembly, typeof(ComicBook).Assembly, typeof(FileUtility).Assembly, typeof(Themes).Assembly
 		};
 
+		private static readonly Regex cacheEntry = new Regex("^(?<entry>.+-[0-9a-f]{" + FolderLength + "}-[0-9a-f]{" + KeyLength + @"})\.(dll|pdb)$", RegexOptions.IgnoreCase);
+
 		private readonly string cachePath;
+
+		private readonly HashSet<string> usedCacheEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
 		public CSharpSourcePluginInitializer(string cachePath)
 		{
@@ -176,6 +180,7 @@ namespace cYo.Projects.ComicRack.Plugins
 			string folderHash = ComputeFolderHash(plugin);
 			string cacheName = plugin.Name + "-" + folderHash + "-" + key;
 			string assemblyFile = Path.Combine(cachePath, cacheName + ".dll");
+			usedCacheEntries.Add(cacheName);
 			if (File.Exists(assemblyFile))
 			{
 				Command.LogDefault("Source plugin '{0}' is unchanged, using '{1}'", plugin.MarkerFile, assemblyFile);
@@ -221,6 +226,24 @@ namespace cYo.Projects.ComicRack.Plugins
 			finally
 			{
 				FileUtility.SafeDirectoryDelete(staging);
+			}
+		}
+
+		// Removes the cache entries of plugins that were deleted, moved or renamed. Call it once, after all scripts folders are scanned.
+		public void SweepCache()
+		{
+			if (!Directory.Exists(cachePath))
+			{
+				return;
+			}
+			foreach (string file in Directory.EnumerateFiles(cachePath))
+			{
+				Match match = cacheEntry.Match(Path.GetFileName(file));
+				if (match.Success && !usedCacheEntries.Contains(match.Groups["entry"].Value))
+				{
+					// An entry that a running ComicRack has loaded stays until a later start.
+					FileUtility.SafeDelete(file);
+				}
 			}
 		}
 

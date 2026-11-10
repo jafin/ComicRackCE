@@ -23,7 +23,7 @@ public sealed class IsolatedScan : MarshalByRefObject
 	}
 
 	// applicationFolder and configFile select the folder and the .config of another application, such as the built ComicRack.exe.
-	internal static Result Run(ScriptsFolder scripts, string applicationFolder = null, string configFile = null, string comicInfoHtmlOf = null)
+	internal static Result Run(ScriptsFolder scripts, string applicationFolder = null, string configFile = null, string comicInfoHtmlOf = null, string[] moreFolders = null)
 	{
 		AppDomainSetup setup = AppDomain.CurrentDomain.SetupInformation;
 		if (applicationFolder != null)
@@ -34,7 +34,7 @@ public sealed class IsolatedScan : MarshalByRefObject
 		try
 		{
 			var scan = (IsolatedScan)domain.CreateInstanceFromAndUnwrap(typeof(IsolatedScan).Assembly.Location, typeof(IsolatedScan).FullName);
-			return scan.Scan(scripts.Scripts, scripts.Cache, comicInfoHtmlOf);
+			return scan.Scan(scripts.Scripts, scripts.Cache, comicInfoHtmlOf, moreFolders ?? new string[0]);
 		}
 		finally
 		{
@@ -42,11 +42,16 @@ public sealed class IsolatedScan : MarshalByRefObject
 		}
 	}
 
-	public Result Scan(string scripts, string cache, string comicInfoHtmlOf)
+	public Result Scan(string scripts, string cache, string comicInfoHtmlOf, string[] moreFolders)
 	{
 		PluginConsole.Install();
 		PluginEngine engine = new PluginEngine(cache);
 		engine.Initialize(new StubEnvironment(), scripts);
+		foreach (string folder in moreFolders)
+		{
+			engine.Initialize(new StubEnvironment(), folder);
+		}
+		engine.CompleteInitialization();
 		Command info = engine.GetCommands(PluginEngine.ScriptTypeComicInfoHtml).FirstOrDefault(c => c.Key == comicInfoHtmlOf);
 		return new Result
 		{

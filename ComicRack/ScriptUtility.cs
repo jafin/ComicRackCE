@@ -77,6 +77,7 @@ namespace cYo.Projects.ComicRack.Viewer
 			PluginEnvironment env = new PluginEnvironment(mainWindow, app, browser, comicDisplay, config, openBooks, ThemePlugin.Default);
 			Scripts.Initialize(env, Program.Paths.ScriptPath);
 			Scripts.Initialize(env, Program.Paths.ScriptPathSecondary);
+			Scripts.CompleteInitialization();
 			Scripts.CommandStates = Program.Settings.PluginsStates;
 			ComicBookDialog.ScriptEngine = Scripts;
 			ComicBookPluginMatcher.PluginEngine = Scripts;

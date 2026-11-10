@@ -88,11 +88,17 @@ internal sealed class ScriptsFolder : IDisposable
 		return dll;
 	}
 
-	public LoadedPlugins Load()
+	// Like ComicRack, scans every folder with the same engine and then completes the initialization once.
+	public LoadedPlugins Load(params string[] moreFoldersUnderRoot)
 	{
 		PluginConsole.Install();
 		PluginEngine engine = new PluginEngine(Cache);
 		engine.Initialize(new StubEnvironment(), Scripts);
+		foreach (string folder in moreFoldersUnderRoot)
+		{
+			engine.Initialize(new StubEnvironment(), PathTo(folder));
+		}
+		engine.CompleteInitialization();
 		return new LoadedPlugins(engine, Root);
 	}
 

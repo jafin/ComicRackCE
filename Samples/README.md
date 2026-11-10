@@ -60,7 +60,7 @@ LangVersion=latest
 - `References` lists the DLLs that the plugin ships, relative to the plugin folder.
 - `FrameworkReferences` lists more assemblies of the .NET Framework or of ComicRack by name. ComicRack always adds the common ones, such as `System`, `System.Core`, `System.Drawing` and `System.Windows.Forms`, and its own plugin API.
 - ComicRack does not load a DLL in the folder of a source plugin as a plugin. The source is the plugin.
-- ComicRack keeps the compiled assembly in its cache folder and compiles again when a source file, the `.csplugin` file or a reference changes.
+- ComicRack keeps the compiled assembly in its cache folder and compiles again when a source file, the `.csplugin` file or a reference changes. At start, it deletes the cached assemblies (`<Name>-<folder>-<key>.dll` and `.pdb`) of plugins that no script folder contains any more, and leaves other files in the cache folder alone.
 - A compile error is written to the script console with file, line and column, and ComicRack skips the plugin.
 - A compile warning is written to the script console after the line "Compiling source plugin", followed by the number of warnings. ComicRack compiles only when something changed, so a start from the cache writes no warnings.
 - Plugins run on .NET Framework 4.8. Language features that need a newer runtime, such as `init` accessors and records, do not compile unless the plugin declares the missing types itself.
