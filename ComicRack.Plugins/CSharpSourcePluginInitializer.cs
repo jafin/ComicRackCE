@@ -186,7 +186,7 @@ namespace cYo.Projects.ComicRack.Plugins
 			try
 			{
 				var compiler = (ISourcePluginCompiler)Activator.CreateInstance(compilerAssembly.GetType(CompilerTypeName, throwOnError: true));
-				IReadOnlyList<string> errors = compiler.Compile(new SourcePluginCompilation
+				SourcePluginCompilationResult result = compiler.Compile(new SourcePluginCompilation
 				{
 					// The name carries the key, because the runtime loads only one assembly per name and tells assemblies apart by it.
 					AssemblyName = assemblyName,
@@ -195,14 +195,22 @@ namespace cYo.Projects.ComicRack.Plugins
 					References = references.Select(reference => reference.File).ToList(),
 					OutputFile = Path.Combine(staging, cacheName + ".dll")
 				});
-				if (errors.Count > 0)
+				if (result.Errors.Count > 0)
 				{
 					Command.LogDefault("Source plugin '{0}' does not compile and is skipped:", plugin.MarkerFile);
-					foreach (string error in errors)
+					foreach (string error in result.Errors)
 					{
 						Command.LogDefault(error);
 					}
 					return null;
+				}
+				if (result.Warnings.Count > 0)
+				{
+					foreach (string warning in result.Warnings)
+					{
+						Command.LogDefault(warning);
+					}
+					Command.LogDefault("Source plugin '{0}' compiled with {1} warning(s)", plugin.MarkerFile, result.Warnings.Count);
 				}
 				RemoveCachedVersions(plugin.Name, folderHash);
 				// The DLL moves last: its presence is what marks the cache entry as complete.

@@ -62,6 +62,7 @@ LangVersion=latest
 - ComicRack does not load a DLL in the folder of a source plugin as a plugin. The source is the plugin.
 - ComicRack keeps the compiled assembly in its cache folder and compiles again when a source file, the `.csplugin` file or a reference changes.
 - A compile error is written to the script console with file, line and column, and ComicRack skips the plugin.
+- A compile warning is written to the script console after the line "Compiling source plugin", followed by the number of warnings. ComicRack compiles only when something changed, so a start from the cache writes no warnings.
 - Plugins run on .NET Framework 4.8. Language features that need a newer runtime, such as `init` accessors and records, do not compile unless the plugin declares the missing types itself.
 
 ## Third-party DLLs

@@ -144,6 +144,27 @@ public class SourcePluginTests
 	}
 
 	[Test]
+	public async Task Compile_warning_is_logged_once_with_file_and_line_and_the_plugin_still_loads()
+	{
+		using var scripts = new ScriptsFolder();
+		scripts.Write(@"Scripts\Warn\Warn.csplugin", "");
+		string source = scripts.Write(@"Scripts\Warn\Plugin.cs", "using cYo.Projects.ComicRack.Plugins;\n[Plugin(\"Warned\")]\npublic class Plugin : IStartup\n{\n\tpublic void Execute() { int unused; }\n}\n");
+
+		var first = scripts.Load();
+		string[] firstConsole = first.ConsoleLinesAboutThisFixture.Split('\n');
+		var second = scripts.Load();
+		string[] secondConsole = second.ConsoleLinesAboutThisFixture.Split('\n');
+
+		await Assert.That(first.Command("Warned", PluginEngine.ScriptTypeStartup)).IsNotNull();
+		int compiling = Array.FindIndex(firstConsole, line => line.StartsWith("Compiling source plugin"));
+		await Assert.That(firstConsole[compiling + 1]).StartsWith(source + "(5,");
+		await Assert.That(firstConsole[compiling + 1]).Contains("warning CS0168");
+		await Assert.That(firstConsole[compiling + 2]).EndsWith("compiled with 1 warning(s)");
+		await Assert.That(secondConsole.Count(line => line.Contains("warning CS0168"))).IsEqualTo(1);
+		await Assert.That(secondConsole.Count(line => line.Contains("compiled with"))).IsEqualTo(1);
+	}
+
+	[Test]
 	public async Task Reference_of_the_csplugin_file_is_compiled_against_and_resolves_when_the_plugin_runs()
 	{
 		using var scripts = new ScriptsFolder();

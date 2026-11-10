@@ -17,10 +17,17 @@ namespace cYo.Projects.ComicRack.Plugins
 		public string OutputFile { get; set; }
 	}
 
+	internal sealed class SourcePluginCompilationResult
+	{
+		public IReadOnlyList<string> Errors { get; set; }
+
+		public IReadOnlyList<string> Warnings { get; set; }
+	}
+
 	// Implemented in ComicRack.Plugins.Compiler, the only assembly that references Roslyn.
 	internal interface ISourcePluginCompiler
 	{
-		// Returns the compile errors in the form "file(line,column): error CS0000: message". An empty list means OutputFile is valid.
-		IReadOnlyList<string> Compile(SourcePluginCompilation compilation);
+		// Diagnostics have the form "file(line,column): error CS0000: message". No errors means OutputFile is valid.
+		SourcePluginCompilationResult Compile(SourcePluginCompilation compilation);
 	}
 }

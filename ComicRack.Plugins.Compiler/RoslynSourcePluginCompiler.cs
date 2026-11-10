@@ -14,11 +14,15 @@ namespace cYo.Projects.ComicRack.Plugins.Compiler
 	{
 		private const string DefaultLanguageVersion = "latest";
 
-		public IReadOnlyList<string> Compile(SourcePluginCompilation request)
+		public SourcePluginCompilationResult Compile(SourcePluginCompilation request)
 		{
 			if (!LanguageVersionFacts.TryParse(request.LanguageVersion ?? DefaultLanguageVersion, out LanguageVersion languageVersion))
 			{
-				return new[] { $"error: LangVersion '{request.LanguageVersion}' is not a C# language version" };
+				return new SourcePluginCompilationResult
+				{
+					Errors = new[] { $"error: LangVersion '{request.LanguageVersion}' is not a C# language version" },
+					Warnings = new string[0]
+				};
 			}
 			var parseOptions = new CSharpParseOptions(languageVersion);
 			var sources = request.SourceFiles.Select(file => new { File = file, Text = ReadSource(file) }).ToList();
@@ -39,7 +43,16 @@ namespace cYo.Projects.ComicRack.Plugins.Compiler
 					options: new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb, pdbFilePath: Path.GetFileName(pdbFile)),
 					embeddedTexts: sources.Select(source => EmbeddedText.FromSource(source.File, source.Text)));
 			}
-			return result.Diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).Select(diagnostic => diagnostic.ToString()).ToList();
+			return new SourcePluginCompilationResult
+			{
+				Errors = Format(result, DiagnosticSeverity.Error),
+				Warnings = Format(result, DiagnosticSeverity.Warning)
+			};
+		}
+
+		private static IReadOnlyList<string> Format(EmitResult result, DiagnosticSeverity severity)
+		{
+			return result.Diagnostics.Where(diagnostic => diagnostic.Severity == severity).Select(diagnostic => diagnostic.ToString()).ToList();
 		}
 
 		private static SourceText ReadSource(string file)
