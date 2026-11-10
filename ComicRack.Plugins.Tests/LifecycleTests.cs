@@ -46,7 +46,7 @@ public class LifecycleTests
 		using var scripts = new ScriptsFolder();
 		string dll = scripts.Compile(@"Scripts\Mine", Source.Plugin("Lazy", "IStartup, IShutdown, IConfig, IDisposable", CountedConstructor + """
 			void IStartup.Execute() { }
-			bool IShutdown.Execute(bool user_is_closing) { return true; }
+			bool IShutdown.Execute(bool userIsClosing) { return true; }
 			void IConfig.Execute() { }
 			public void Dispose() { }
 			""", attribute: "Image = \"icon.png\""));
@@ -63,7 +63,7 @@ public class LifecycleTests
 		using var scripts = new ScriptsFolder();
 		string dll = scripts.Compile(@"Scripts\Mine", Source.Plugin("Off", "IStartup, IShutdown", CountedConstructor + """
 			void IStartup.Execute() { }
-			bool IShutdown.Execute(bool user_is_closing) { return true; }
+			bool IShutdown.Execute(bool userIsClosing) { return true; }
 			""", attribute: "Enabled = false"));
 		var loaded = scripts.Load();
 
@@ -132,7 +132,7 @@ public class LifecycleTests
 					throw new FormatException("no database zq-constructor");
 				}
 				public void Execute() { }
-				public bool Execute(bool user_is_closing) { return true; }
+				public bool Execute(bool userIsClosing) { return true; }
 			}
 			[Plugin("Working")]
 			public class Working : IComicInfoHtml { public string Execute(ComicBook[] books) { return "works"; } }

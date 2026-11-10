@@ -90,7 +90,7 @@ namespace cYo.Projects.ComicRack.Plugins
 	/// <summary>Runs when ComicRack closes. Return false to cancel a close that the user started.</summary>
 	public interface IShutdown : IDotNetCommand
 	{
-		public bool Execute(bool user_is_closing);
+		public bool Execute(bool userIsClosing);
 	}
 
 	/// <summary>A book information panel that shows the returned HTML.</summary>

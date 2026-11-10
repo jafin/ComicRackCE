@@ -30,7 +30,7 @@ public class EngineTests
 	public async Task Second_dotnet_plugin_with_a_key_that_is_taken_is_skipped_and_never_created()
 	{
 		using var scripts = new ScriptsFolder();
-		string first = scripts.Compile(@"Scripts\A", Source.Plugin("Same", "IStartup, IShutdown", RecordCreation + " public void Execute() { } public bool Execute(bool user_is_closing) { return true; }"));
+		string first = scripts.Compile(@"Scripts\A", Source.Plugin("Same", "IStartup, IShutdown", RecordCreation + " public void Execute() { } public bool Execute(bool userIsClosing) { return true; }"));
 		string second = scripts.Compile(@"Scripts\B", Source.Plugin("Same", "IBookOpened, IConfig", RecordCreation + " public void Execute(ComicBook book) { } public void Execute() { }"));
 
 		var loaded = scripts.Load();
@@ -49,7 +49,7 @@ public class EngineTests
 	{
 		using var scripts = new ScriptsFolder();
 		scripts.Write(@"Scripts\A\script.py", PythonScript("Taken", "Books", "run"));
-		scripts.Compile(@"Scripts\B", Source.Plugin("Taken", "IStartup, IShutdown", "public void Execute() { } public bool Execute(bool user_is_closing) { return true; }"));
+		scripts.Compile(@"Scripts\B", Source.Plugin("Taken", "IStartup, IShutdown", "public void Execute() { } public bool Execute(bool userIsClosing) { return true; }"));
 
 		var loaded = scripts.Load();
 
@@ -60,7 +60,7 @@ public class EngineTests
 	public async Task Python_script_with_the_key_of_a_dotnet_plugin_is_skipped()
 	{
 		using var scripts = new ScriptsFolder();
-		scripts.Compile(@"Scripts\A", Source.Plugin("Taken", "IStartup, IShutdown", "public void Execute() { } public bool Execute(bool user_is_closing) { return true; }"));
+		scripts.Compile(@"Scripts\A", Source.Plugin("Taken", "IStartup, IShutdown", "public void Execute() { } public bool Execute(bool userIsClosing) { return true; }"));
 		scripts.Write(@"Scripts\B\script.py", PythonScript("Taken", "Books", "run"));
 
 		var loaded = scripts.Load();
@@ -77,7 +77,7 @@ public class EngineTests
 			public class WithConfig : IStartup, IShutdown, IConfig
 			{
 				void IStartup.Execute() { }
-				bool IShutdown.Execute(bool user_is_closing) { return true; }
+				bool IShutdown.Execute(bool userIsClosing) { return true; }
 				void IConfig.Execute() { }
 			}
 			[Plugin("Plain")]
@@ -113,7 +113,7 @@ public class EngineTests
 			public class Multi : IStartup, IShutdown
 			{
 				public void Execute() { }
-				public bool Execute(bool user_is_closing) { return true; }
+				public bool Execute(bool userIsClosing) { return true; }
 			}
 			[Plugin("Solo")]
 			public class Solo : IStartup { public void Execute() { } }
@@ -134,7 +134,7 @@ public class EngineTests
 	public async Task SetEnabled_switches_every_hook_of_the_key()
 	{
 		using var scripts = new ScriptsFolder();
-		scripts.Compile(@"Scripts\Mine", Source.Plugin("Multi", "IStartup, IShutdown", "public void Execute() { } public bool Execute(bool user_is_closing) { return true; }"));
+		scripts.Compile(@"Scripts\Mine", Source.Plugin("Multi", "IStartup, IShutdown", "public void Execute() { } public bool Execute(bool userIsClosing) { return true; }"));
 		var loaded = scripts.Load();
 
 		loaded.Engine.SetEnabled("Multi", false);
@@ -153,7 +153,7 @@ public class EngineTests
 		scripts.Compile(@"Scripts\A", Source.Plugin("Thrower", "IStartup, IDisposable", "public void Execute() { } public void Dispose() { throw new InvalidOperationException(\"cannot close zq-dispose\"); }"));
 		string good = scripts.Compile(@"Scripts\B", Source.Plugin("Good", "IStartup, IShutdown, IConfig, IDisposable", Source.Context + """
 			void IStartup.Execute() { }
-			bool IShutdown.Execute(bool user_is_closing) { return true; }
+			bool IShutdown.Execute(bool userIsClosing) { return true; }
 			void IConfig.Execute() { }
 			public void Dispose() { System.IO.File.AppendAllText(System.IO.Path.Combine(context.ScriptPath, "disposed.txt"), "x"); }
 			"""));

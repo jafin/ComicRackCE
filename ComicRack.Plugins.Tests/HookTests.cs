@@ -47,7 +47,7 @@ public class HookTests
 			Dictionary<string, string> ISearch.Execute(string hint, string text, int limit) { return new Dictionary<string, string> { { hint + " " + text, limit.ToString() } }; }
 			void IConfig.Execute() { calls.Add("Config"); }
 			void IStartup.Execute() { calls.Add("Startup"); }
-			bool IShutdown.Execute(bool user_is_closing) { return !user_is_closing; }
+			bool IShutdown.Execute(bool userIsClosing) { return !userIsClosing; }
 			string IComicInfoHtml.Execute(ComicBook[] books) { return string.Join("|", calls); }
 			Control IComicInfoUI.Execute() { return new Label { Text = "info" }; }
 			string IQuickOpenHtml.Execute(ComicBook[] books) { return "quick " + books.Length; }
