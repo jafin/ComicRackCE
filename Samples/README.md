@@ -45,6 +45,31 @@ To see the messages of plugins and compile errors, start ComicRack with the scri
 - Some hooks have the same `Execute` signature, for example `ILibrary`, `IEditor`, `IBooks` and `INewBooks`. To give each hook its own code, implement the interfaces explicitly: `void IBooks.Execute(ComicBook[] books) { ... }`.
 - The `Key` must be unique. ComicRack skips a plugin whose `Key` another plugin or script already uses.
 
+## Translate a plugin
+
+ComicRack translates the name and the description of a command, and the texts that a plugin passes to `context.Localize(elementKey, text)`. It uses the same language files as Python scripts. No code is needed for the name and the description.
+
+1. Make a folder with the name of the language next to the plugin: `de`, or `de-DE` for a regional variant. The plugin folder is the folder of the DLL, or the folder of the `.csplugin` file.
+2. Put a file `<Key>.xml` in it. `<Key>` is the `Key` of the `[Plugin]` attribute. The `de` folder can also be a `de.zip` file that holds the XML file.
+3. Write one `Text` entry for each text. `Key` is the element key, `Text` is the translation, and `Comment` is the original text.
+
+```xml
+<?xml version="1.0"?>
+<TR Name="MyPlugin" CultureName="de">
+  <Texts>
+    <Text Key="Name" Text="Mein Plugin" Comment="My Plugin" />
+    <Text Key="Description" Text="Tut etwas" Comment="Does something" />
+    <Text Key="Greeting" Text="Hallo" Comment="Hello" />
+  </Texts>
+</TR>
+```
+
+- The element keys `Name` and `Description` translate the `Name` and the `Description` of the `[Plugin]` attribute.
+- `context.Localize("Greeting", "Hello")` returns `Hallo` in German. It returns the text from the code when the language has no file or no entry, so the code always contains the English text.
+- A regional file adds to the file of the main language and wins where both have an entry.
+- If the plugin folder has no file for the language, ComicRack looks for `Script.<Key>.xml` in its own `Languages\<language>` folder, then for `<Key>.xml` there. A plugin that ships with ComicRack uses this.
+- ComicRack reads the files again only when it starts.
+
 ## Plugin API version
 
 The plugin API is the set of attributes and interfaces in `ComicRack.Plugins.dll`. Its assembly version changes with every build, so it cannot tell a plugin whether it fits. Declare the API version your plugin was written for, once, in any of its files:

@@ -13,6 +13,10 @@ namespace cYo.Projects.ComicRack.Plugins
 			public IPluginEnvironment ComicRack { get; set; }
 
 			public string ScriptPath { get; set; }
+
+			public string Key { get; set; }
+
+			public string Localize(string elementKey, string text) => ComicRack.Localize(Key, elementKey, text);
 		}
 
 		private readonly ConstructorInfo constructor;
@@ -48,7 +52,7 @@ namespace cYo.Projects.ComicRack.Plugins
 		// Every hook command of the class calls this when it is initialized; they all have the same folder.
 		public void SetContext(IPluginEnvironment env, string folder)
 		{
-			Interlocked.CompareExchange(ref context, new Context { ComicRack = env, ScriptPath = folder }, null);
+			Interlocked.CompareExchange(ref context, new Context { ComicRack = env, ScriptPath = folder, Key = Attribute.Key }, null);
 		}
 
 		public object GetInstance()
